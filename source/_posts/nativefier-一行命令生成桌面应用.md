@@ -1,7 +1,7 @@
 ---
 layout: archives
 title: nativefier 一行命令生成桌面应用
-date: 2020-06-27 14:53:57
+date: 2020-08-13 09:08:30
 tags: nativefier
 keywords: nativefier 一行命令生成桌面应用
 categories: 桌面应用
