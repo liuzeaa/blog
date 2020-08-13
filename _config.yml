@@ -5,15 +5,15 @@
 # Site
 title: 阿泽的博客
 subtitle:
-description:
+description: 阿泽专注于前端领域的研究，目标是向全栈开发努力奋斗。
 keywords:
-author: liuzeaa
+author: 阿泽
 language: zh-CN
-timezone:
+timezone: Asia/Shanghai
 
 # URL
 ## If your site is put in a subdirectory, set url as 'http://yoursite.com/child' and root as '/child/'
-url: http://yoursite.com
+url: http://blog.shankk.ml
 root: /
 permalink: :year/:month/:day/:title/
 permalink_defaults:
