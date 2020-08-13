@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.0.2">
+  <link rel="apple-touch-icon" sizes="180x180" href="/blog/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/blog/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/blog/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/blog/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/blog/css/main.css">
+
+
+
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@5.14.0/css/all.min.css">
+  <link rel="stylesheet" href="//cdn.jsdelivr.net/npm/animate.css@3.1.1/animate.min.css">
+
+<script class="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"liuzeaa.github.io","root":"/blog/","scheme":"Muse","version":"8.0.0-rc.5","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12},"copycode":false,"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false};
+  </script>
+
+  <meta name="description" content="Node模块机制JavaScript没有模块系统、标准库比较少、没有标准接口、缺乏包管理系统。所以JavaScript社区提出了commonjs规范来解决这些问题。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Node模块机制">
+<meta property="og:url" content="http://liuzeaa.github.io/blog/2018/01/08/Node%E6%A8%A1%E5%9D%97%E6%9C%BA%E5%88%B6/index.html">
+<meta property="og:site_name" content="阿泽的博客">
+<meta property="og:description" content="Node模块机制JavaScript没有模块系统、标准库比较少、没有标准接口、缺乏包管理系统。所以JavaScript社区提出了commonjs规范来解决这些问题。">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2018-01-08T08:11:02.000Z">
+<meta property="article:modified_time" content="2020-08-13T02:01:35.429Z">
+<meta property="article:author" content="阿泽">
+<meta property="article:tag" content="Node.js">
+<meta name="twitter:card" content="summary">
+
+
+<link rel="canonical" href="http://liuzeaa.github.io/blog/2018/01/08/Node%E6%A8%A1%E5%9D%97%E6%9C%BA%E5%88%B6/">
+
+
+<script class="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>Node模块机制 | 阿泽的博客</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  body { margin-top: 2rem; }
+
+  .use-motion .menu-item,
+  .use-motion .sidebar,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header {
+    visibility: visible;
+  }
+
+  .use-motion .header,
+  .use-motion .site-brand-container .toggle,
+  .use-motion .footer { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle,
+  .use-motion .custom-logo-image {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line {
+    transform: scaleX(1);
+  }
+
+  .search-pop-overlay, .sidebar-nav { display: none; }
+  .sidebar-panel { display: block; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/blog/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <h1 class="site-title">阿泽的博客</h1>
+      <i class="logo-line"></i>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+
+
+
+</div>
+        
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <section class="post-toc-wrap sidebar-panel">
+          <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#Node%E6%A8%A1%E5%9D%97%E6%9C%BA%E5%88%B6"><span class="nav-number">1.</span> <span class="nav-text">Node模块机制</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#commonjs%E8%A7%84%E8%8C%83"><span class="nav-number">1.1.</span> <span class="nav-text">commonjs规范</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%BC%95%E7%94%A8%E6%A8%A1%E5%9D%97"><span class="nav-number">1.1.1.</span> <span class="nav-text">引用模块</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%AE%9A%E4%B9%89%E6%A8%A1%E5%9D%97"><span class="nav-number">1.1.2.</span> <span class="nav-text">定义模块</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%A8%A1%E5%9D%97%E6%A0%87%E8%AF%86"><span class="nav-number">1.1.3.</span> <span class="nav-text">模块标识</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%A8%A1%E5%9D%97%E7%BC%93%E5%AD%98"><span class="nav-number">1.2.</span> <span class="nav-text">模块缓存</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%A8%A1%E5%9D%97%E7%9A%84%E5%BE%AA%E7%8E%AF%E5%8A%A0%E8%BD%BD"><span class="nav-number">1.3.</span> <span class="nav-text">模块的循环加载</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#module%E5%AF%B9%E8%B1%A1"><span class="nav-number">1.4.</span> <span class="nav-text">module对象</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Node%E7%9A%84%E6%A8%A1%E5%9D%97"><span class="nav-number">1.5.</span> <span class="nav-text">Node的模块</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#module-exports%E5%92%8Cexports%E5%8C%BA%E5%88%AB"><span class="nav-number">1.6.</span> <span class="nav-text">module.exports和exports区别</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%8F%82%E8%80%83"><span class="nav-number">2.</span> <span class="nav-text">参考</span></a></li></ol></div>
+      </section>
+      <!--/noindex-->
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">阿泽</p>
+  <div class="site-description" itemprop="description">阿泽专注于前端领域的研究，目标是向全栈开发努力奋斗。</div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/blog/archives">
+          <span class="site-state-item-count">78</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/blog/categories/">
+        <span class="site-state-item-count">5</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/blog/tags/">
+        <span class="site-state-item-count">52</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </section>
+    </div>
+  </aside>
+  <div class="sidebar-dimmer"></div>
+
+
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+    <div class="main-inner post posts-expand">
+      
+
+      
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://liuzeaa.github.io/blog/2018/01/08/Node%E6%A8%A1%E5%9D%97%E6%9C%BA%E5%88%B6/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/blog/images/avatar.gif">
+      <meta itemprop="name" content="阿泽">
+      <meta itemprop="description" content="阿泽专注于前端领域的研究，目标是向全栈开发努力奋斗。">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="阿泽的博客">
+    </span>
+
+    
+    
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Node模块机制
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2018-01-08 16:11:02" itemprop="dateCreated datePublished" datetime="2018-01-08T16:11:02+08:00">2018-01-08</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2020-08-13 10:01:35" itemprop="dateModified" datetime="2020-08-13T10:01:35+08:00">2020-08-13</time>
+              </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+        <h1 id="Node模块机制"><a href="#Node模块机制" class="headerlink" title="Node模块机制"></a>Node模块机制</h1><p>JavaScript没有模块系统、标准库比较少、没有标准接口、缺乏包管理系统。<br>所以JavaScript社区提出了commonjs规范来解决这些问题。</p>
+<a id="more"></a>
+<p>一个Node应用由模块组成，每个js文件就是一个独立模块。<br>npm基于commonjs实现包的管理使我们开发Node.js更方便。</p>
+<h2 id="commonjs规范"><a href="#commonjs规范" class="headerlink" title="commonjs规范"></a>commonjs规范</h2><h3 id="引用模块"><a href="#引用模块" class="headerlink" title="引用模块"></a>引用模块</h3><p>在commonjs规范中，定义了 require() 方法，这个方法接受一个模块的标识。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">var math &#x3D; require(&#39;math&#39;);</span><br></pre></td></tr></table></figure>
+<h3 id="定义模块"><a href="#定义模块" class="headerlink" title="定义模块"></a>定义模块</h3><p>模块有自己的作用域。在模块里面定义的变量、函数、类，都是私有的，对其他文件不可见。</p>
+<p>上下文中提供了一个 exports 对象可以导出当前模块的方法或者变量，并且它是唯一导出的出口。在模块中，还存在一个 module 对象，它代表当前模块，exports 是 module 的属性。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">&#x2F;&#x2F; math.js</span><br><span class="line">function add(a,b)&#123;</span><br><span class="line">    return a + b;</span><br><span class="line">&#125;</span><br><span class="line">exports.add &#x3D; add;  # 导出一个add的方法</span><br></pre></td></tr></table></figure>
+<p>再新建一个文件就可以用 require()引用这个模块了</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">&#x2F;&#x2F; app.js</span><br><span class="line">var math &#x3D; require(&#39;math&#39;);</span><br><span class="line">console.log(math.add(1,2)); # 3</span><br></pre></td></tr></table></figure>
+
+<h3 id="模块标识"><a href="#模块标识" class="headerlink" title="模块标识"></a>模块标识</h3><p>模块标识就是传递给 require() 方法的参数，它必须是符合小驼峰命名的规范，或者以  .. 开头的相对路径，或者绝对路径。它可以没有文件后缀名.js。</p>
+<h2 id="模块缓存"><a href="#模块缓存" class="headerlink" title="模块缓存"></a>模块缓存</h2><p>加载模块后会被缓存,多次加载还是同一个对象。<br>查看模块缓存 require.cache<br>查看模块绝对路径  require.resolve(./math.js)<br>删除模块的缓存 require.cache[require.resolve(./math.js)]</p>
+<h2 id="模块的循环加载"><a href="#模块的循环加载" class="headerlink" title="模块的循环加载"></a>模块的循环加载</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line">&#x2F;&#x2F; a.js</span><br><span class="line">console.log(&#39;a 开始&#39;);</span><br><span class="line">exports.done &#x3D; false;</span><br><span class="line">const b &#x3D; require(&#39;.&#x2F;b.js&#39;);</span><br><span class="line">console.log(&#39;在 a 中，b.done &#x3D; %j&#39;, b.done);</span><br><span class="line">exports.done &#x3D; true;</span><br><span class="line">console.log(&#39;a 结束&#39;);</span><br><span class="line"></span><br><span class="line">&#x2F;&#x2F; b.js</span><br><span class="line">console.log(&#39;b 开始&#39;);</span><br><span class="line">exports.done &#x3D; false;</span><br><span class="line">const a &#x3D; require(&#39;.&#x2F;a.js&#39;);</span><br><span class="line">console.log(&#39;在 b 中，a.done &#x3D; %j&#39;, a.done);</span><br><span class="line">exports.done &#x3D; true;</span><br><span class="line">console.log(&#39;b 结束&#39;);</span><br><span class="line"></span><br><span class="line">&#x2F;&#x2F; main.js</span><br><span class="line">console.log(&#39;main 开始&#39;);</span><br><span class="line">const a &#x3D; require(&#39;.&#x2F;a.js&#39;);</span><br><span class="line">const b &#x3D; require(&#39;.&#x2F;b.js&#39;);</span><br><span class="line">console.log(&#39;在 main 中，a.done&#x3D;%j，b.done&#x3D;%j&#39;, a.done, b.done);</span><br></pre></td></tr></table></figure>
+<p>当 main.js 加载 a.js 时，a.js 又加载 b.js。 此时，b.js 会尝试去加载 a.js。 为了防止无限的循环，会返回一个 a.js 的 exports 对象的 未完成的副本 给 b.js 模块。 然后 b.js 完成加载，并将 exports 对象提供给 a.js 模块。</p>
+<p>当 main.js 加载这两个模块时，它们都已经完成加载。 因此，该程序的输出会是：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">node main.js</span><br><span class="line">main 开始</span><br><span class="line">a 开始</span><br><span class="line">b 开始</span><br><span class="line">在 b 中，a.done &#x3D; false</span><br><span class="line">b 结束</span><br><span class="line">在 a 中，b.done &#x3D; true</span><br><span class="line">a 结束</span><br><span class="line">在 main 中，a.done&#x3D;true，b.done&#x3D;true</span><br></pre></td></tr></table></figure>
+
+<h2 id="module对象"><a href="#module对象" class="headerlink" title="module对象"></a>module对象</h2><p>module.children  被该模块引用的模块对象。<br>module.id   模块的标识符。 通常是完全解析后的文件名。<br>module.parent 最先引用该模块的模块。<br>module.paths 模块的搜索路径。<br>… 更多去官网查询</p>
+<h2 id="Node的模块"><a href="#Node的模块" class="headerlink" title="Node的模块"></a>Node的模块</h2><p>在Node中，模块分为两类：一类是Node提供的模块，称为核心模块。另外一类是用户编写的模块，称为文件模块。<br>核心模块定义在 Node.js 源代码的 lib/ 目录下。<br>require() 总是会优先加载核心模块。 例如，require(‘http’) 始终返回内置的 HTTP 模块，即使有同名文件。</p>
+<h2 id="module-exports和exports区别"><a href="#module-exports和exports区别" class="headerlink" title="module.exports和exports区别"></a>module.exports和exports区别</h2><p>exports是module.exports对象的引用</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">function require(&#x2F;* ... *&#x2F;) &#123;</span><br><span class="line">  const module &#x3D; &#123; exports: &#123;&#125; &#125;;</span><br><span class="line">  ((module, exports) &#x3D;&gt; &#123;</span><br><span class="line">    &#x2F;&#x2F; 模块代码在这。在这个例子中，定义了一个函数。</span><br><span class="line">    function someFunc() &#123;&#125;</span><br><span class="line">    exports &#x3D; someFunc;</span><br><span class="line">    &#x2F;&#x2F; 此时，exports 不再是一个 module.exports 的快捷方式，</span><br><span class="line">    &#x2F;&#x2F; 且这个模块依然导出一个空的默认对象。</span><br><span class="line">    module.exports &#x3D; someFunc;</span><br><span class="line">    &#x2F;&#x2F; 此时，该模块导出 someFunc，而不是默认对象。</span><br><span class="line">  &#125;)(module, module.exports);</span><br><span class="line">  return module.exports;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h1 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h1><p><a target="_blank" rel="noopener" href="http://nodejs.cn/api/modules.html#modules_cycles">http://nodejs.cn/api/modules.html#modules_cycles</a> </p>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/blog/tags/Node-js/" rel="tag"># Node.js</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/blog/2018/01/08/%E4%BB%80%E4%B9%88%E6%98%AFNode-js/" rel="prev" title="什么是Node.js">
+                  <i class="fa fa-chevron-left"></i> 什么是Node.js
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/blog/2018/01/15/http%E6%A8%A1%E5%9D%97/" rel="next" title="http模块">
+                  http模块 <i class="fa fa-chevron-right"></i>
+                </a>
+            </div>
+          </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+      
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      const activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      const commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+    </div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+      
+
+      
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">阿泽</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/muse/" class="theme-link" rel="noopener" target="_blank">NexT.Muse</a> 强力驱动
+  </div>
+
+      
+
+
+
+
+
+
+
+
+    </div>
+  </footer>
+
+  
+  <script src="//cdn.jsdelivr.net/npm/animejs@3.2.0/lib/anime.min.js"></script>
+<script src="/blog/js/utils.js"></script><script src="/blog/js/motion.js"></script><script src="/blog/js/schemes/muse.js"></script><script src="/blog/js/next-boot.js"></script>
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

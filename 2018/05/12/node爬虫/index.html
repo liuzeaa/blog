@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.0.2">
+  <link rel="apple-touch-icon" sizes="180x180" href="/blog/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/blog/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/blog/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/blog/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/blog/css/main.css">
+
+
+
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@5.14.0/css/all.min.css">
+  <link rel="stylesheet" href="//cdn.jsdelivr.net/npm/animate.css@3.1.1/animate.min.css">
+
+<script class="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"liuzeaa.github.io","root":"/blog/","scheme":"Muse","version":"8.0.0-rc.5","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12},"copycode":false,"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false};
+  </script>
+
+  <meta name="description" content="node爬虫什么是爬虫呢，是一种按照一定的规则，自动地抓取万维网信息的程序或者脚本。为什么选用node呢，因为我是前端，当然要用js实现。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="node爬虫">
+<meta property="og:url" content="http://liuzeaa.github.io/blog/2018/05/12/node%E7%88%AC%E8%99%AB/index.html">
+<meta property="og:site_name" content="阿泽的博客">
+<meta property="og:description" content="node爬虫什么是爬虫呢，是一种按照一定的规则，自动地抓取万维网信息的程序或者脚本。为什么选用node呢，因为我是前端，当然要用js实现。">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2018-05-12T07:37:42.000Z">
+<meta property="article:modified_time" content="2020-08-13T02:01:35.429Z">
+<meta property="article:author" content="阿泽">
+<meta property="article:tag" content="Node.js">
+<meta property="article:tag" content="爬虫">
+<meta name="twitter:card" content="summary">
+
+
+<link rel="canonical" href="http://liuzeaa.github.io/blog/2018/05/12/node%E7%88%AC%E8%99%AB/">
+
+
+<script class="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>node爬虫 | 阿泽的博客</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  body { margin-top: 2rem; }
+
+  .use-motion .menu-item,
+  .use-motion .sidebar,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header {
+    visibility: visible;
+  }
+
+  .use-motion .header,
+  .use-motion .site-brand-container .toggle,
+  .use-motion .footer { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle,
+  .use-motion .custom-logo-image {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line {
+    transform: scaleX(1);
+  }
+
+  .search-pop-overlay, .sidebar-nav { display: none; }
+  .sidebar-panel { display: block; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/blog/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <h1 class="site-title">阿泽的博客</h1>
+      <i class="logo-line"></i>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+
+
+
+</div>
+        
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <section class="post-toc-wrap sidebar-panel">
+          <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#node%E7%88%AC%E8%99%AB"><span class="nav-number">1.</span> <span class="nav-text">node爬虫</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E9%A1%B9%E7%9B%AE%E5%88%86%E6%9E%90"><span class="nav-number">1.1.</span> <span class="nav-text">项目分析</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%AE%89%E8%A3%85"><span class="nav-number">1.2.</span> <span class="nav-text">安装</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%A0%B8%E5%BF%83%E4%BB%A3%E7%A0%81"><span class="nav-number">1.3.</span> <span class="nav-text">核心代码</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%8F%82%E8%80%83"><span class="nav-number">2.</span> <span class="nav-text">参考</span></a></li></ol></div>
+      </section>
+      <!--/noindex-->
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">阿泽</p>
+  <div class="site-description" itemprop="description">阿泽专注于前端领域的研究，目标是向全栈开发努力奋斗。</div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/blog/archives">
+          <span class="site-state-item-count">78</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/blog/categories/">
+        <span class="site-state-item-count">5</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/blog/tags/">
+        <span class="site-state-item-count">52</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </section>
+    </div>
+  </aside>
+  <div class="sidebar-dimmer"></div>
+
+
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+    <div class="main-inner post posts-expand">
+      
+
+      
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://liuzeaa.github.io/blog/2018/05/12/node%E7%88%AC%E8%99%AB/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/blog/images/avatar.gif">
+      <meta itemprop="name" content="阿泽">
+      <meta itemprop="description" content="阿泽专注于前端领域的研究，目标是向全栈开发努力奋斗。">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="阿泽的博客">
+    </span>
+
+    
+    
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          node爬虫
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2018-05-12 15:37:42" itemprop="dateCreated datePublished" datetime="2018-05-12T15:37:42+08:00">2018-05-12</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2020-08-13 10:01:35" itemprop="dateModified" datetime="2020-08-13T10:01:35+08:00">2020-08-13</time>
+              </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+        <h1 id="node爬虫"><a href="#node爬虫" class="headerlink" title="node爬虫"></a>node爬虫</h1><p>什么是爬虫呢，是一种按照一定的规则，自动地抓取万维网信息的程序或者脚本。为什么选用node呢，因为我是前端，当然要用js实现。</p>
+<a id="more"></a>
+
+<h2 id="项目分析"><a href="#项目分析" class="headerlink" title="项目分析"></a>项目分析</h2><p>爬取<a target="_blank" rel="noopener" href="http://top.zhaopin.com/">http://top.zhaopin.com</a>  智联网站上的全国的竞争最激烈三个月内前十的岗位。不需要定时爬取。使用request和cheerio模块。node版本7.6.0、npm版本4.1.2</p>
+<h2 id="安装"><a href="#安装" class="headerlink" title="安装"></a>安装</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">npm install request cheerio -S</span><br></pre></td></tr></table></figure>
+<p>request 模块是一个简化的HTTP客户端。<br>cheerio 模块专为服务器设计的核心jQuery的快速，灵活和精益的实现。可以把爬到的内容和jQuery一样使用。</p>
+<h2 id="核心代码"><a href="#核心代码" class="headerlink" title="核心代码"></a>核心代码</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line">&#x2F;&#x2F; app.js</span><br><span class="line">const request &#x3D; require(&#39;request&#39;);</span><br><span class="line">const cheerio &#x3D; require(&#39;cheerio&#39;);</span><br><span class="line"></span><br><span class="line">&#x2F;&#x2F; 发起请求</span><br><span class="line">request(&#39;http:&#x2F;&#x2F;top.zhaopin.com&#39;, (error, response, body) &#x3D;&gt; &#123;</span><br><span class="line">    if(error)&#123;</span><br><span class="line">        console.error(error);</span><br><span class="line">    &#125;</span><br><span class="line">    let json &#x3D; &#123;&#125;;</span><br><span class="line">    &#x2F;&#x2F; 获取到的内容放到cheerio模块</span><br><span class="line">    const $ &#x3D; cheerio.load(body);</span><br><span class="line"></span><br><span class="line">    &#x2F;&#x2F; jQuery 遍历  #hotJobTop .topList li  是通过http:&#x2F;&#x2F;top.zhaopin.com 分析页面结构得到的</span><br><span class="line">    $(&#39;#hotJobTop .topList li&#39;).each(function (index) &#123;</span><br><span class="line">        let obj &#x3D; json[index] &#x3D; &#123;&#125;;</span><br><span class="line">        obj.name &#x3D; $(this).find(&#39;.title&#39;).text().trim();</span><br><span class="line">        obj.num &#x3D; $(this).find(&#39;.paddingR10&#39;).text().trim();</span><br><span class="line">    &#125;);</span><br><span class="line"></span><br><span class="line">    &#x2F;&#x2F; 打印数据</span><br><span class="line">    console.log(json);</span><br><span class="line">&#125;);</span><br></pre></td></tr></table></figure>
+<p>执行 node app.js 就会得到如下结果。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">[ &#123; name: &#39;Java开发工程师&#39;, num: &#39;340538人&#x2F;天&#39; &#125;,</span><br><span class="line">  &#123; name: &#39;软件工程师&#39;, num: &#39;220873人&#x2F;天&#39; &#125;,</span><br><span class="line">  &#123; name: &#39;销售代表&#39;, num: &#39;175053人&#x2F;天&#39; &#125;,</span><br><span class="line">  &#123; name: &#39;会计&#x2F;会计师&#39;, num: &#39;168225人&#x2F;天&#39; &#125;,</span><br><span class="line">  &#123; name: &#39;行政专员&#x2F;助理&#39;, num: &#39;150913人&#x2F;天&#39; &#125;,</span><br><span class="line">  &#123; name: &#39;WEB前端开发&#39;, num: &#39;140979人&#x2F;天&#39; &#125;,</span><br><span class="line">  &#123; name: &#39;助理&#x2F;秘书&#x2F;文员&#39;, num: &#39;139098人&#x2F;天&#39; &#125;,</span><br><span class="line">  &#123; name: &#39;软件测试&#39;, num: &#39;136399人&#x2F;天&#39; &#125;,</span><br><span class="line">  &#123; name: &#39;人力资源专员&#x2F;助理&#39;, num: &#39;123482人&#x2F;天&#39; &#125;,</span><br><span class="line">  &#123; name: &#39;用户界面（UI）设计&#39;, num: &#39;107505人&#x2F;天&#39; &#125; ]</span><br></pre></td></tr></table></figure>
+<p>一个简单的爬虫就写好了，看看前十有没有你从事的岗位吧！</p>
+<h1 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h1><p><a target="_blank" rel="noopener" href="https://github.com/request/request">https://github.com/request/request</a><br><a target="_blank" rel="noopener" href="https://github.com/cheeriojs/cheerio">https://github.com/cheeriojs/cheerio</a></p>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/blog/tags/Node-js/" rel="tag"># Node.js</a>
+              <a href="/blog/tags/%E7%88%AC%E8%99%AB/" rel="tag"># 爬虫</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/blog/2018/05/11/socket-io%E4%BD%BF%E7%94%A8/" rel="prev" title="socket.io使用">
+                  <i class="fa fa-chevron-left"></i> socket.io使用
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/blog/2018/05/14/%E4%BD%BF%E7%94%A8express-generator%E5%BF%AB%E9%80%9F%E7%94%9F%E6%88%90express%E5%BA%94%E7%94%A8/" rel="next" title="使用express-generator快速生成express应用">
+                  使用express-generator快速生成express应用 <i class="fa fa-chevron-right"></i>
+                </a>
+            </div>
+          </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+      
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      const activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      const commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+    </div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+      
+
+      
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">阿泽</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/muse/" class="theme-link" rel="noopener" target="_blank">NexT.Muse</a> 强力驱动
+  </div>
+
+      
+
+
+
+
+
+
+
+
+    </div>
+  </footer>
+
+  
+  <script src="//cdn.jsdelivr.net/npm/animejs@3.2.0/lib/anime.min.js"></script>
+<script src="/blog/js/utils.js"></script><script src="/blog/js/motion.js"></script><script src="/blog/js/schemes/muse.js"></script><script src="/blog/js/next-boot.js"></script>
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

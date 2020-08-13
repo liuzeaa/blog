@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.0.2">
+  <link rel="apple-touch-icon" sizes="180x180" href="/blog/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/blog/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/blog/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/blog/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/blog/css/main.css">
+
+
+
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@5.14.0/css/all.min.css">
+  <link rel="stylesheet" href="//cdn.jsdelivr.net/npm/animate.css@3.1.1/animate.min.css">
+
+<script class="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"liuzeaa.github.io","root":"/blog/","scheme":"Muse","version":"8.0.0-rc.5","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12},"copycode":false,"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false};
+  </script>
+
+  <meta name="description" content="部署小说api服务到腾讯云小说api1.0版本写完了，接下来就开始部署到服务器上，用到了nginx、pm2、nvm、git、OpenSSL。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="部署小说api服务到腾讯云">
+<meta property="og:url" content="http://liuzeaa.github.io/blog/2018/05/29/%E9%83%A8%E7%BD%B2%E5%B0%8F%E8%AF%B4api%E6%9C%8D%E5%8A%A1%E5%88%B0%E8%85%BE%E8%AE%AF%E4%BA%91/index.html">
+<meta property="og:site_name" content="阿泽的博客">
+<meta property="og:description" content="部署小说api服务到腾讯云小说api1.0版本写完了，接下来就开始部署到服务器上，用到了nginx、pm2、nvm、git、OpenSSL。">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://hexo-1252491761.file.myqcloud.com/%E9%83%A8%E7%BD%B2%E5%B0%8F%E8%AF%B4api%E6%9C%8D%E5%8A%A1%E5%88%B0%E8%85%BE%E8%AE%AF%E4%BA%91/QQ%E5%9B%BE%E7%89%8720180529113617.png">
+<meta property="og:image" content="http://hexo-1252491761.file.myqcloud.com/%E9%83%A8%E7%BD%B2%E5%B0%8F%E8%AF%B4api%E6%9C%8D%E5%8A%A1%E5%88%B0%E8%85%BE%E8%AE%AF%E4%BA%91/QQ%E5%9B%BE%E7%89%8720180529134733.png">
+<meta property="og:image" content="http://hexo-1252491761.file.myqcloud.com/%E9%83%A8%E7%BD%B2%E5%B0%8F%E8%AF%B4api%E6%9C%8D%E5%8A%A1%E5%88%B0%E8%85%BE%E8%AE%AF%E4%BA%91/QQ%E5%9B%BE%E7%89%8720180529140415.png">
+<meta property="og:image" content="http://hexo-1252491761.file.myqcloud.com/%E9%83%A8%E7%BD%B2%E5%B0%8F%E8%AF%B4api%E6%9C%8D%E5%8A%A1%E5%88%B0%E8%85%BE%E8%AE%AF%E4%BA%91/QQ%E5%9B%BE%E7%89%8720180529140928.png">
+<meta property="og:image" content="http://hexo-1252491761.file.myqcloud.com/%E9%83%A8%E7%BD%B2%E5%B0%8F%E8%AF%B4api%E6%9C%8D%E5%8A%A1%E5%88%B0%E8%85%BE%E8%AE%AF%E4%BA%91/QQ%E5%9B%BE%E7%89%8720180529141439.png">
+<meta property="og:image" content="http://hexo-1252491761.file.myqcloud.com/%E9%83%A8%E7%BD%B2%E5%B0%8F%E8%AF%B4api%E6%9C%8D%E5%8A%A1%E5%88%B0%E8%85%BE%E8%AE%AF%E4%BA%91/QQ%E5%9B%BE%E7%89%8720180529142105.png">
+<meta property="og:image" content="http://hexo-1252491761.file.myqcloud.com/%E9%83%A8%E7%BD%B2%E5%B0%8F%E8%AF%B4api%E6%9C%8D%E5%8A%A1%E5%88%B0%E8%85%BE%E8%AE%AF%E4%BA%91/QQ%E5%9B%BE%E7%89%8720180529143306.png">
+<meta property="og:image" content="http://hexo-1252491761.file.myqcloud.com/%E9%83%A8%E7%BD%B2%E5%B0%8F%E8%AF%B4api%E6%9C%8D%E5%8A%A1%E5%88%B0%E8%85%BE%E8%AE%AF%E4%BA%91/QQ%E5%9B%BE%E7%89%8720180529143835.png">
+<meta property="article:published_time" content="2018-05-29T03:00:08.000Z">
+<meta property="article:modified_time" content="2020-08-13T02:01:35.429Z">
+<meta property="article:author" content="阿泽">
+<meta property="article:tag" content="Node.js">
+<meta property="article:tag" content="Express">
+<meta property="article:tag" content="API">
+<meta property="article:tag" content="部署">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://hexo-1252491761.file.myqcloud.com/%E9%83%A8%E7%BD%B2%E5%B0%8F%E8%AF%B4api%E6%9C%8D%E5%8A%A1%E5%88%B0%E8%85%BE%E8%AE%AF%E4%BA%91/QQ%E5%9B%BE%E7%89%8720180529113617.png">
+
+
+<link rel="canonical" href="http://liuzeaa.github.io/blog/2018/05/29/%E9%83%A8%E7%BD%B2%E5%B0%8F%E8%AF%B4api%E6%9C%8D%E5%8A%A1%E5%88%B0%E8%85%BE%E8%AE%AF%E4%BA%91/">
+
+
+<script class="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>部署小说api服务到腾讯云 | 阿泽的博客</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  body { margin-top: 2rem; }
+
+  .use-motion .menu-item,
+  .use-motion .sidebar,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header {
+    visibility: visible;
+  }
+
+  .use-motion .header,
+  .use-motion .site-brand-container .toggle,
+  .use-motion .footer { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle,
+  .use-motion .custom-logo-image {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line {
+    transform: scaleX(1);
+  }
+
+  .search-pop-overlay, .sidebar-nav { display: none; }
+  .sidebar-panel { display: block; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/blog/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <h1 class="site-title">阿泽的博客</h1>
+      <i class="logo-line"></i>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+
+
+
+</div>
+        
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <section class="post-toc-wrap sidebar-panel">
+          <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#%E9%83%A8%E7%BD%B2%E5%B0%8F%E8%AF%B4api%E6%9C%8D%E5%8A%A1%E5%88%B0%E8%85%BE%E8%AE%AF%E4%BA%91"><span class="nav-number">1.</span> <span class="nav-text">部署小说api服务到腾讯云</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%AC%AC%E4%B8%80%E6%AD%A5%E6%B7%BB%E5%8A%A0pm2%E9%85%8D%E7%BD%AE%E6%96%87%E4%BB%B6"><span class="nav-number">1.1.</span> <span class="nav-text">第一步添加pm2配置文件</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%AC%AC%E4%BA%8C%E6%AD%A5%E8%B4%AD%E4%B9%B0%E6%9C%8D%E5%8A%A1%E5%99%A8%E5%92%8C%E5%9F%9F%E5%90%8D"><span class="nav-number">1.2.</span> <span class="nav-text">第二步购买服务器和域名</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%AC%AC%E4%B8%89%E6%AD%A5%E8%AE%BE%E7%BD%AE%E5%AD%90%E5%9F%9F%E5%90%8D"><span class="nav-number">1.3.</span> <span class="nav-text">第三步设置子域名</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%AC%AC%E5%9B%9B%E6%AD%A5%E7%99%BB%E9%99%86%E6%9C%8D%E5%8A%A1%E5%99%A8%E5%AE%89%E8%A3%85%E8%BD%AF%E4%BB%B6"><span class="nav-number">1.4.</span> <span class="nav-text">第四步登陆服务器安装软件</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%AE%89%E8%A3%85nginx"><span class="nav-number">1.4.1.</span> <span class="nav-text">安装nginx</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%AE%89%E8%A3%85nvm"><span class="nav-number">1.4.2.</span> <span class="nav-text">安装nvm</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%AE%89%E8%A3%85node%E5%92%8Cpm2%E3%80%81apidoc"><span class="nav-number">1.4.3.</span> <span class="nav-text">安装node和pm2、apidoc</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%AE%89%E8%A3%85git"><span class="nav-number">1.4.4.</span> <span class="nav-text">安装git</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%9C%A8%E6%9C%8D%E5%8A%A1%E5%99%A8%E4%B8%8A%E5%85%8B%E9%9A%86git%E4%BB%93%E5%BA%93"><span class="nav-number">1.5.</span> <span class="nav-text">在服务器上克隆git仓库</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E9%85%8D%E7%BD%AEnginx"><span class="nav-number">1.6.</span> <span class="nav-text">配置nginx</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#gzip%E5%8E%8B%E7%BC%A9"><span class="nav-number">1.6.1.</span> <span class="nav-text">gzip压缩</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E9%9A%90%E8%97%8Fnginx%E7%89%88%E6%9C%AC%E5%8F%B7"><span class="nav-number">1.6.2.</span> <span class="nav-text">隐藏nginx版本号</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E9%85%8D%E7%BD%AEssl%E8%AF%81%E4%B9%A6https%EF%BC%8C%E7%BB%99%E4%BD%A0%E7%9A%84%E7%BD%91%E7%AB%99%E5%8A%A0%E4%B8%AA%E5%B0%8F%E7%BB%BF%E9%94%81"><span class="nav-number">1.6.3.</span> <span class="nav-text">配置ssl证书https，给你的网站加个小绿锁</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E7%94%B3%E8%AF%B7%E8%85%BE%E8%AE%AF%E4%BA%91ssl%E8%AF%81%E4%B9%A6"><span class="nav-number">1.6.3.1.</span> <span class="nav-text">申请腾讯云ssl证书</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E4%B8%8B%E8%BD%BD%E8%AF%81%E4%B9%A6%E4%B8%8A%E4%BC%A0%E5%88%B0%E6%9C%8D%E5%8A%A1%E5%99%A8"><span class="nav-number">1.6.3.2.</span> <span class="nav-text">下载证书上传到服务器</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%8A%A0%E5%BC%BA-HTTPS-%E5%AE%89%E5%85%A8%E6%80%A7"><span class="nav-number">1.6.3.3.</span> <span class="nav-text">加强 HTTPS 安全性</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E4%BF%AE%E6%94%B9%E9%85%8D%E7%BD%AE%E6%96%87%E4%BB%B6"><span class="nav-number">1.6.3.4.</span> <span class="nav-text">修改配置文件</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#SSL%E5%AE%89%E5%85%A8%E6%B5%8B%E8%AF%95"><span class="nav-number">1.7.</span> <span class="nav-text">SSL安全测试</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%80%BB%E7%BB%93"><span class="nav-number">1.8.</span> <span class="nav-text">总结</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%8F%82%E8%80%83"><span class="nav-number">2.</span> <span class="nav-text">参考</span></a></li></ol></div>
+      </section>
+      <!--/noindex-->
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">阿泽</p>
+  <div class="site-description" itemprop="description">阿泽专注于前端领域的研究，目标是向全栈开发努力奋斗。</div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/blog/archives">
+          <span class="site-state-item-count">78</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/blog/categories/">
+        <span class="site-state-item-count">5</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/blog/tags/">
+        <span class="site-state-item-count">52</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </section>
+    </div>
+  </aside>
+  <div class="sidebar-dimmer"></div>
+
+
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+    <div class="main-inner post posts-expand">
+      
+
+      
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://liuzeaa.github.io/blog/2018/05/29/%E9%83%A8%E7%BD%B2%E5%B0%8F%E8%AF%B4api%E6%9C%8D%E5%8A%A1%E5%88%B0%E8%85%BE%E8%AE%AF%E4%BA%91/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/blog/images/avatar.gif">
+      <meta itemprop="name" content="阿泽">
+      <meta itemprop="description" content="阿泽专注于前端领域的研究，目标是向全栈开发努力奋斗。">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="阿泽的博客">
+    </span>
+
+    
+    
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          部署小说api服务到腾讯云
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2018-05-29 11:00:08" itemprop="dateCreated datePublished" datetime="2018-05-29T11:00:08+08:00">2018-05-29</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2020-08-13 10:01:35" itemprop="dateModified" datetime="2020-08-13T10:01:35+08:00">2020-08-13</time>
+              </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+        <h1 id="部署小说api服务到腾讯云"><a href="#部署小说api服务到腾讯云" class="headerlink" title="部署小说api服务到腾讯云"></a>部署小说api服务到腾讯云</h1><p>小说api1.0版本写完了，接下来就开始部署到服务器上，用到了nginx、pm2、nvm、git、OpenSSL。</p>
+<a id="more"></a>
+<p>服务器配置: CentOS 7.4 64位 1 核 2 GB 1 Mbps<br>node版本: 8.9.0<br>nvm版本: 0.33.11<br>npm版本： 5.5.1<br>nginx版本：1.12.2<br>git版本: 2.9.5</p>
+<h2 id="第一步添加pm2配置文件"><a href="#第一步添加pm2配置文件" class="headerlink" title="第一步添加pm2配置文件"></a>第一步添加pm2配置文件</h2><p>在小说api项目的根目录创建一个pm2.json的文件。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line">&#123;</span><br><span class="line">    &quot;name&quot;: &quot;novel-api&quot;,  &#x2F;&#x2F; 服务名</span><br><span class="line">    &quot;script&quot;: &quot;.&#x2F;bin&#x2F;www&quot;, &#x2F;&#x2F; 启动脚本</span><br><span class="line">    &quot;cwd&quot;: &quot;.&#x2F;&quot;,   &#x2F;&#x2F; 当前工作路径</span><br><span class="line">    &quot;watch&quot;: [  &#x2F;&#x2F; 监控变化的目录，一旦变化，自动重启</span><br><span class="line">        &quot;bin&quot;,</span><br><span class="line">        &quot;routers&quot;</span><br><span class="line">    ],</span><br><span class="line">    &quot;ignore_watch&quot;: [  &#x2F;&#x2F; 从监控目录中排除</span><br><span class="line">        &quot;node_modules&quot;,</span><br><span class="line">        &quot;logs&quot;,</span><br><span class="line">        &quot;public&quot;,</span><br><span class="line">        &quot;log&quot;</span><br><span class="line">    ],</span><br><span class="line">    &quot;watch_options&quot;: &#123;</span><br><span class="line">        &quot;followSymlinks&quot;: false</span><br><span class="line">    &#125;,</span><br><span class="line">    &quot;max_memory_restart&quot;: &quot;1G&quot;, &#x2F;&#x2F; 根据内存限制重新启动应用程序。</span><br><span class="line">    &quot;error_file&quot;: &quot;.&#x2F;logs&#x2F;novel-apierr.log&quot;,  &#x2F;&#x2F; 错误日志路径</span><br><span class="line">    &quot;out_file&quot;: &quot;.&#x2F;logs&#x2F;novel-api-out.log&quot;,   &#x2F;&#x2F; 普通日志路径</span><br><span class="line">    &quot;env&quot;: &#123;</span><br><span class="line">        &quot;DEBUG&quot;: &quot;novel-api&quot;,  &#x2F;&#x2F; 环境变量参数，debug名字为novel-api，8080端口监听</span><br><span class="line">        &quot;PORT&quot;: &quot;8080&quot;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>package.json文件添加npm run deploy部署命令。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">&quot;deploy&quot;: &quot;pm2 start pm2.json&quot;</span><br></pre></td></tr></table></figure>
+<p>pm2 常用命令。<br>pm2 save  保存当前进程列表。<br>pm2 resurrect  启动之前保存的进程列表。<br>pm2 restart app.js|app_name 重启进程<br>pm2 start app.js  启动进程<br>pm2 list 查看进程列表<br>pm2 stop app_name |app_id 停止指定的应用。 all 停止所有应用</p>
+<h2 id="第二步购买服务器和域名"><a href="#第二步购买服务器和域名" class="headerlink" title="第二步购买服务器和域名"></a>第二步购买服务器和域名</h2><p>购买服务器<a target="_blank" rel="noopener" href="https://buy.cloud.tencent.com/cvm?tab=lite">https://buy.cloud.tencent.com/cvm?tab=lite</a>，我买的是CentOS 7.4 64位 1 核 2 GB 1 Mbps的服务器。如果只是尝试部署流程，可以选择按时计费。<br>购买域名<a target="_blank" rel="noopener" href="https://dnspod.cloud.tencent.com/?from=qcloudProductDns">https://dnspod.cloud.tencent.com/?from=qcloudProductDns</a>建议选.com的域名。</p>
+<h2 id="第三步设置子域名"><a href="#第三步设置子域名" class="headerlink" title="第三步设置子域名"></a>第三步设置子域名</h2><p>添加一个api开头的子域名<a target="_blank" rel="noopener" href="https://console.cloud.tencent.com/domain">https://console.cloud.tencent.com/domain</a>，然后添加解析。<br><img src="http://hexo-1252491761.file.myqcloud.com/%E9%83%A8%E7%BD%B2%E5%B0%8F%E8%AF%B4api%E6%9C%8D%E5%8A%A1%E5%88%B0%E8%85%BE%E8%AE%AF%E4%BA%91/QQ%E5%9B%BE%E7%89%8720180529113617.png"></p>
+<h2 id="第四步登陆服务器安装软件"><a href="#第四步登陆服务器安装软件" class="headerlink" title="第四步登陆服务器安装软件"></a>第四步登陆服务器安装软件</h2><p>登陆到服务器然后执行以下安装命令。</p>
+<h3 id="安装nginx"><a href="#安装nginx" class="headerlink" title="安装nginx"></a>安装nginx</h3><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">yum install -y nginx</span><br><span class="line">nginx -v</span><br></pre></td></tr></table></figure>
+<h3 id="安装nvm"><a href="#安装nvm" class="headerlink" title="安装nvm"></a>安装nvm</h3><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">curl -o- https:&#x2F;&#x2F;raw.githubusercontent.com&#x2F;creationix&#x2F;nvm&#x2F;v0.33.11&#x2F;install.sh | bash</span><br><span class="line">nvm --version</span><br></pre></td></tr></table></figure>
+<h3 id="安装node和pm2、apidoc"><a href="#安装node和pm2、apidoc" class="headerlink" title="安装node和pm2、apidoc"></a>安装node和pm2、apidoc</h3><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">nvm install 8.9.0</span><br><span class="line">nvm use 8.9.0</span><br><span class="line">node -v</span><br><span class="line">npm -v</span><br><span class="line">npm install -g pm2 apidoc</span><br></pre></td></tr></table></figure>
+<h3 id="安装git"><a href="#安装git" class="headerlink" title="安装git"></a>安装git</h3><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">yum install -y curl-devel expat-devel gettext-devel openssl-devel zlib-devel tar</span><br><span class="line">yum install -y gcc-c++ perl-ExtUtils-MakeMaker</span><br><span class="line">cd &#x2F;usr&#x2F;src</span><br><span class="line">wget https:&#x2F;&#x2F;www.kernel.org&#x2F;pub&#x2F;software&#x2F;scm&#x2F;git&#x2F;git-2.9.5.tar.gz</span><br><span class="line">tar xf git-2.9.5.tar.gz</span><br><span class="line">cd git-2.9.5</span><br><span class="line">make configure</span><br><span class="line">make profix&#x3D;&#x2F;usr&#x2F;git</span><br><span class="line">make install</span><br><span class="line">echo &quot;export PATH&#x3D;$PATH:&#x2F;usr&#x2F;git&#x2F;bin&quot; &gt;&gt; &#x2F;etc&#x2F;profile</span><br><span class="line">source &#x2F;etc&#x2F;profile</span><br><span class="line">git --version </span><br><span class="line">&#x2F;&#x2F; 配置git</span><br><span class="line">git config --global user.name &quot;用户名称&quot;</span><br><span class="line">git config --global user.email 电子邮件地址</span><br></pre></td></tr></table></figure>
+
+<h2 id="在服务器上克隆git仓库"><a href="#在服务器上克隆git仓库" class="headerlink" title="在服务器上克隆git仓库"></a>在服务器上克隆git仓库</h2><p>先进入home路径创建wwwroot文件夹。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">cd &#x2F;home &amp;&amp; mkdir wwwroot</span><br><span class="line">cd wwwroot</span><br><span class="line">git clone https:&#x2F;&#x2F;github.com&#x2F;lanpangzhi&#x2F;novel-api.git</span><br><span class="line">cd novel-api</span><br><span class="line">npm install</span><br><span class="line">npm run doc</span><br><span class="line">npm run deploy</span><br></pre></td></tr></table></figure>
+<p>这个应用就pm2被启动了。</p>
+<h2 id="配置nginx"><a href="#配置nginx" class="headerlink" title="配置nginx"></a>配置nginx</h2><p>先启动nginx。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">nginx</span><br></pre></td></tr></table></figure>
+<p><a target="_blank" rel="noopener" href="http://123.206.45.87/">http://123.206.45.87</a> 在浏览器输入服务器ip就可以看到nginx已经启动了。<br><img src="http://hexo-1252491761.file.myqcloud.com/%E9%83%A8%E7%BD%B2%E5%B0%8F%E8%AF%B4api%E6%9C%8D%E5%8A%A1%E5%88%B0%E8%85%BE%E8%AE%AF%E4%BA%91/QQ%E5%9B%BE%E7%89%8720180529134733.png"><br>进入nginx配置目录，新建文件。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">cd &#x2F;etc&#x2F;nginx&#x2F;conf.d</span><br><span class="line">touch api.langpz.com-8080.conf</span><br></pre></td></tr></table></figure>
+<p>如果一台服务器的server比较多，建议用域名和端口做配置文件名。<br>编辑api.langpz.com-8080.conf 配置文件。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">vi api.langpz.com-8080.conf</span><br></pre></td></tr></table></figure>
+<p>把下面代码复制粘贴过去。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line">upstream novel-api &#123;</span><br><span class="line">    server 127.0.0.1:8080;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">server &#123;</span><br><span class="line">    listen 80;</span><br><span class="line">    server_name 你自己的域名;</span><br><span class="line">    location &#x2F; &#123;</span><br><span class="line">        proxy_pass http:&#x2F;&#x2F;novel-api;</span><br><span class="line">        proxy_set_header   X-Real-IP        $remote_addr;</span><br><span class="line">        proxy_set_header   X-Forwarded-For  $proxy_add_x_forwarded_for;</span><br><span class="line">        proxy_set_header   Host             $http_host;</span><br><span class="line">        proxy_set_header   X-NginX-Proxy    true;</span><br><span class="line">        proxy_redirect     off;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>ctrl + c 输入:wq  退出并保存。再执行nginx -s reload 在浏览器输入你的域名就可以看到文档，<a target="_blank" rel="noopener" href="http://api.langpz.com/">http://api.langpz.com</a></p>
+<h3 id="gzip压缩"><a href="#gzip压缩" class="headerlink" title="gzip压缩"></a>gzip压缩</h3><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">cd &#x2F;etc&#x2F;nginx&#x2F;</span><br><span class="line">vi nginx.conf</span><br></pre></td></tr></table></figure>
+<p>把下面代码复制粘贴过去。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">## gzip压缩</span><br><span class="line">gzip on;</span><br><span class="line"># ie6不启用gzip</span><br><span class="line">gzip_disable &quot;msie6&quot;;</span><br><span class="line">gzip_vary on;</span><br><span class="line">gzip_proxied any;</span><br><span class="line"># 压缩等级 1-9</span><br><span class="line">gzip_comp_level 2;</span><br><span class="line">gzip_buffers 16 8k;</span><br><span class="line">gzip_http_version 1.1;</span><br><span class="line"># 为除“text&#x2F;html”之外的MIME类型启用压缩</span><br><span class="line">gzip_types text&#x2F;plain text&#x2F;css application&#x2F;json application&#x2F;x-javascript image&#x2F;gif image&#x2F;jpeg image&#x2F;png image&#x2F;tiff image&#x2F;x-icon application&#x2F;font-woff application&#x2F;vnd.ms-fontobject text&#x2F;javascript;</span><br></pre></td></tr></table></figure>
+<p>ctrl + c 输入:wq  退出并保存。再执行nginx -s reload。可以去站长之家看你的压缩率<a target="_blank" rel="noopener" href="http://tool.chinaz.com/gzips/">http://tool.chinaz.com/gzips/</a><br><img src="http://hexo-1252491761.file.myqcloud.com/%E9%83%A8%E7%BD%B2%E5%B0%8F%E8%AF%B4api%E6%9C%8D%E5%8A%A1%E5%88%B0%E8%85%BE%E8%AE%AF%E4%BA%91/QQ%E5%9B%BE%E7%89%8720180529140415.png"></p>
+<h3 id="隐藏nginx版本号"><a href="#隐藏nginx版本号" class="headerlink" title="隐藏nginx版本号"></a>隐藏nginx版本号</h3><p>还是修改nginx.conf这个文件</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">vi nginx.conf</span><br><span class="line"></span><br><span class="line">&#x2F;&#x2F; 把下面代码复制过去</span><br><span class="line"># 隐藏nginx版本号</span><br><span class="line">server_tokens off;</span><br></pre></td></tr></table></figure>
+<p>ctrl + c 输入:wq  退出并保存。再执行nginx -s reload。<br><img src="http://hexo-1252491761.file.myqcloud.com/%E9%83%A8%E7%BD%B2%E5%B0%8F%E8%AF%B4api%E6%9C%8D%E5%8A%A1%E5%88%B0%E8%85%BE%E8%AE%AF%E4%BA%91/QQ%E5%9B%BE%E7%89%8720180529140928.png"><br>这里就不显示nginx版本号了。</p>
+<h3 id="配置ssl证书https，给你的网站加个小绿锁"><a href="#配置ssl证书https，给你的网站加个小绿锁" class="headerlink" title="配置ssl证书https，给你的网站加个小绿锁"></a>配置ssl证书https，给你的网站加个小绿锁</h3><p>我用的是腾讯云的免费证书，也可以自己生成。<a target="_blank" rel="noopener" href="https://cloud.tencent.com/product/ssl?from=qcloudHpHeaderSsl">https://cloud.tencent.com/product/ssl?from=qcloudHpHeaderSsl</a>，使用域名免费版。</p>
+<h4 id="申请腾讯云ssl证书"><a href="#申请腾讯云ssl证书" class="headerlink" title="申请腾讯云ssl证书"></a>申请腾讯云ssl证书</h4><p><img src="http://hexo-1252491761.file.myqcloud.com/%E9%83%A8%E7%BD%B2%E5%B0%8F%E8%AF%B4api%E6%9C%8D%E5%8A%A1%E5%88%B0%E8%85%BE%E8%AE%AF%E4%BA%91/QQ%E5%9B%BE%E7%89%8720180529141439.png"><br>直接点下一步，然后用推荐选项验证。申请很快不到十分钟就下来，到时候还会有邮件和短信通知。</p>
+<h4 id="下载证书上传到服务器"><a href="#下载证书上传到服务器" class="headerlink" title="下载证书上传到服务器"></a>下载证书上传到服务器</h4><p>找到腾讯云的ssl证书管理去下载证书。<br><img src="http://hexo-1252491761.file.myqcloud.com/%E9%83%A8%E7%BD%B2%E5%B0%8F%E8%AF%B4api%E6%9C%8D%E5%8A%A1%E5%88%B0%E8%85%BE%E8%AE%AF%E4%BA%91/QQ%E5%9B%BE%E7%89%8720180529142105.png"><br>压缩包里面有三个文件夹找到Nginx这个文件夹。<br>在服务器进入nginx所在目录新建一个文件夹。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">cd &#x2F;etc&#x2F;nginx&#x2F;</span><br><span class="line">mkdir api.langpz.com</span><br></pre></td></tr></table></figure>
+<p>然后把Nginx文件夹里面两个文件上传到服务器/etc/nginx/api.langpz.com 这个文件夹里面。<br>可以下载一个FileZilla软件或者下载一个别的ftp工具，还可以用命令行，我这里下载了FileZilla使用它去上传。</p>
+<h4 id="加强-HTTPS-安全性"><a href="#加强-HTTPS-安全性" class="headerlink" title="加强 HTTPS 安全性"></a>加强 HTTPS 安全性</h4><p>首先在目录 /etc/nginx/api.langpz.com 运行以下代码生成 dhparam.pem 文件</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">cd &#x2F;etc&#x2F;nginx&#x2F;api.langpz.com    </span><br><span class="line">openssl dhparam -out dhparam.pem 2048</span><br></pre></td></tr></table></figure>
+
+<h4 id="修改配置文件"><a href="#修改配置文件" class="headerlink" title="修改配置文件"></a>修改配置文件</h4><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">cd &#x2F;etc&#x2F;nginx&#x2F;conf.d</span><br><span class="line">touch api.langpz.com-8080.conf</span><br></pre></td></tr></table></figure>
+<p>把下面代码覆盖api.langpz.com-8080.conf文件。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br></pre></td><td class="code"><pre><span class="line">upstream novel-api &#123;</span><br><span class="line">    server 127.0.0.1:8080;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"># 配置共享会话缓存大小</span><br><span class="line">ssl_session_cache shared:SSL:10m;</span><br><span class="line"># 配置会话超时时间</span><br><span class="line">ssl_session_timeout 10m;</span><br><span class="line"></span><br><span class="line"># 强制跳转https</span><br><span class="line">server &#123;</span><br><span class="line">    listen 80;</span><br><span class="line">    server_name api.langpz.com;</span><br><span class="line">    return 301 https:&#x2F;&#x2F;$server_name$request_uri;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">server &#123;</span><br><span class="line"> listen 443 ssl;</span><br><span class="line"> server_name api.langpz.com;</span><br><span class="line"></span><br><span class="line"> # 证书文件</span><br><span class="line"> ssl_certificate      &#x2F;etc&#x2F;nginx&#x2F;api.langpz.com&#x2F;1_api.langpz.com_bundle.crt;</span><br><span class="line"> # 私钥文件</span><br><span class="line"> ssl_certificate_key  &#x2F;etc&#x2F;nginx&#x2F;api.langpz.com&#x2F;2_api.langpz.com.key;</span><br><span class="line"> # 设置长连接</span><br><span class="line"> keepalive_timeout    70;</span><br><span class="line"> # 优先采取服务器算法</span><br><span class="line"> ssl_prefer_server_ciphers on;</span><br><span class="line"> # 使用DH文件</span><br><span class="line"> ssl_dhparam &#x2F;etc&#x2F;nginx&#x2F;api.langpz.com&#x2F;dhparam.pem;</span><br><span class="line"> ssl_protocols TLSv1 TLSv1.1 TLSv1.2;</span><br><span class="line"> # 定义算法</span><br><span class="line"> ssl_ciphers &quot;EECDH+ECDSA+AESGCM EECDH+aRSA+AESGCM EECDH+ECDSA+SHA384 EECDH+ECDSA+SHA256 EECDH+aRSA+SHA384 EECDH+aRSA+SHA256 EECDH+aRSA+RC4 EECDH EDH+aRSA !aNULL !eNULL !LOW !3DES !MD5 !EXP !PSK !SRP !DSS !RC4&quot;;</span><br><span class="line"> # HSTS策略</span><br><span class="line"> add_header Strict-Transport-Security &quot;max-age&#x3D;31536000; includeSubDomains;preload&quot; always;</span><br><span class="line"> # 防XSS攻擊</span><br><span class="line"> add_header X-Xss-Protection 1;</span><br><span class="line"> # 禁止服务器自动解析资源类型</span><br><span class="line"> add_header X-Content-Type-Options nosniff;</span><br><span class="line"></span><br><span class="line"> </span><br><span class="line"> location &#x2F; &#123;</span><br><span class="line">    proxy_pass http:&#x2F;&#x2F;novel-api;</span><br><span class="line">    proxy_set_header   X-Real-IP        $remote_addr;</span><br><span class="line">    proxy_set_header   X-Forwarded-For  $proxy_add_x_forwarded_for;</span><br><span class="line">    proxy_set_header   Host             $http_host;</span><br><span class="line">    proxy_set_header   X-NginX-Proxy    true;</span><br><span class="line">    proxy_redirect     off;</span><br><span class="line"> &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>ctrl + c 输入:wq  退出并保存。再执行nginx -s reload。<br>现在就可以访问<a target="_blank" rel="noopener" href="https://api.langpz.com/">https://api.langpz.com</a>。如果访问http协议就会强制跳转到https协议。<br><img src="http://hexo-1252491761.file.myqcloud.com/%E9%83%A8%E7%BD%B2%E5%B0%8F%E8%AF%B4api%E6%9C%8D%E5%8A%A1%E5%88%B0%E8%85%BE%E8%AE%AF%E4%BA%91/QQ%E5%9B%BE%E7%89%8720180529143306.png"></p>
+<h2 id="SSL安全测试"><a href="#SSL安全测试" class="headerlink" title="SSL安全测试"></a>SSL安全测试</h2><p><a target="_blank" rel="noopener" href="https://www.ssllabs.com/ssltest/index.html"></a><br>输入你的域名。<br>之前在nginx配置加强 HTTPS 安全性，所以结果是A+。<br><img src="http://hexo-1252491761.file.myqcloud.com/%E9%83%A8%E7%BD%B2%E5%B0%8F%E8%AF%B4api%E6%9C%8D%E5%8A%A1%E5%88%B0%E8%85%BE%E8%AE%AF%E4%BA%91/QQ%E5%9B%BE%E7%89%8720180529143835.png"></p>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>这种部署比较麻烦，部署完发现pm2也有部署功能，2.0用koa.js重构的时候用pm2部署，docker 生成镜像。</p>
+<h1 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h1><p><a target="_blank" rel="noopener" href="https://nginx.org/en/docs/">https://nginx.org/en/docs/</a><br><a target="_blank" rel="noopener" href="https://github.com/creationix/nvm">https://github.com/creationix/nvm</a><br><a target="_blank" rel="noopener" href="https://www.thinkjs.org/zh-cn/doc/3.0/deploy.html">https://www.thinkjs.org/zh-cn/doc/3.0/deploy.html</a><br><a target="_blank" rel="noopener" href="https://www.cnblogs.com/chyingp/p/pm2-documentation.html">https://www.cnblogs.com/chyingp/p/pm2-documentation.html</a><br><a target="_blank" rel="noopener" href="http://www.runoob.com/git/git-install-setup.html">http://www.runoob.com/git/git-install-setup.html</a><br><a target="_blank" rel="noopener" href="https://nginx.rails365.net/chapters/install.html">https://nginx.rails365.net/chapters/install.html</a><br><a target="_blank" rel="noopener" href="https://www.cnblogs.com/nuccch/p/7681592.html">https://www.cnblogs.com/nuccch/p/7681592.html</a><br><a target="_blank" rel="noopener" href="https://aotu.io/notes/2016/08/16/nginx-https/index.html">https://aotu.io/notes/2016/08/16/nginx-https/index.html</a></p>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/blog/tags/Node-js/" rel="tag"># Node.js</a>
+              <a href="/blog/tags/Express/" rel="tag"># Express</a>
+              <a href="/blog/tags/API/" rel="tag"># API</a>
+              <a href="/blog/tags/%E9%83%A8%E7%BD%B2/" rel="tag"># 部署</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/blog/2018/05/26/%E4%BD%BF%E7%94%A8apidoc%E6%96%87%E6%A1%A3%E7%A5%9E%E5%99%A8%EF%BC%8C%E5%BF%AB%E9%80%9F%E7%94%9F%E6%88%90api%E6%96%87%E6%A1%A3/" rel="prev" title="使用apidoc文档神器，快速生成api文档">
+                  <i class="fa fa-chevron-left"></i> 使用apidoc文档神器，快速生成api文档
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/blog/2018/06/08/webpack%E5%85%A5%E9%97%A8%E6%8C%87%E5%8D%97/" rel="next" title="webpack4.0入门指南（一）安装和转换es6语法">
+                  webpack4.0入门指南（一）安装和转换es6语法 <i class="fa fa-chevron-right"></i>
+                </a>
+            </div>
+          </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+      
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      const activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      const commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+    </div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+      
+
+      
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">阿泽</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/muse/" class="theme-link" rel="noopener" target="_blank">NexT.Muse</a> 强力驱动
+  </div>
+
+      
+
+
+
+
+
+
+
+
+    </div>
+  </footer>
+
+  
+  <script src="//cdn.jsdelivr.net/npm/animejs@3.2.0/lib/anime.min.js"></script>
+<script src="/blog/js/utils.js"></script><script src="/blog/js/motion.js"></script><script src="/blog/js/schemes/muse.js"></script><script src="/blog/js/next-boot.js"></script>
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>
